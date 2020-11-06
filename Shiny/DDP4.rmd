@@ -1,0 +1,145 @@
+---
+title: "DDP4"
+author: "Siddharth Shashank Kumar"
+date: "11/6/2020"
+output: ioslides_presentation
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+#UI slides
+```{r}
+library(shiny)
+
+shinyUI(
+  navbarPage("Shiny Application",
+             tabPanel("Analysis",
+                      fluidPage(
+                        titlePanel("The interdependence between variables and miles per gallon (MPG)"),
+                        sidebarLayout(
+                          sidebarPanel(
+                            selectInput("attributes", "attributes:",
+                                        c("#cylinders" = "cyl",
+                                          "Displacement in cubic inches" = "disp",
+                                          "Net horsepower" = "hp",
+                                          "Ratio of rear axel" = "drat",
+                                          "Weight in 1000lbs" = "wt",
+                                          "quarter mile time" = "qsec",
+                                          "Versus" = "vs",
+                                          "Transmission 0-automatic 1-manual" = "am",
+                                          "#forward gears" = "gear",
+                                          "#carburetors" = "carb"
+                                        )),
+                            
+                            checkboxInput("outliers", "Show BoxPlot's outliers", FALSE)
+                          ),
+                          
+                          mainPanel(
+                            h3(textOutput("caption")),
+                            
+                            tabsetPanel(type = "tabs", 
+                                        tabPanel("BoxPlot", plotOutput("mpgBoxPlot")),
+                                        tabPanel("Regression model", 
+                                                 plotOutput("mpgPlot"),
+                                                 verbatimTextOutput("fit")
+                                        )
+                            )
+                          )
+                        )
+                      )
+             ),
+             tabPanel("About the Data Set",
+                      
+                      h3("Coursera Regression Models Course Project"),
+                      helpText("You work for Motor Trend, a magazine about the automobile industry dwelving to at a data set of a collection of cars, they are interested in exploring the relationship",
+                               "between a set of parameters and miles per gallon (MPG) (outcome). They are particularly enthralled in the following two questions: Is an automatic or manual transmission better for MPG. Quantifying the MPG difference between automatic and manual transmissions"),
+                      h3("Important"),
+                      p("A data frame with 32 observations on 11 variables."),
+                      
+                      a("https://class.coursera.org/regmods-008")
+             ),
+             tabPanel("Data Detail Models",
+                      h2("Motor Trend across the Car Road"),
+                      hr(),
+                      h3("Elucidation"),
+                      helpText("The data was extrapolated from the source 1974 Motor Trend US magazine,",
+                               " and consists of fuel intake and 10 aspects of automobile design and performance",
+                               " for 32 automobiles in the 1973-74 models."),
+                      h3("Format"),
+                      p("A data frame with 32 observations on 11 parameters."),
+                      
+                      p("  1.   mpg    Miles per gallon"),
+                      p("  2.	 cyl	 # cylinders"),
+                      p("  3.	 disp	 Displacement in cubic inches"),
+                      p("  4.	 hp	 Net Horsepower"),
+                      p("  5.	 drat	 Ratio of real axle"),
+                      p("  6.	 wt	 weight in 1000lbs"),
+                      p("  7.	 qsec	 quarter mile time"),
+                      p("  8.	 vs	 V/S"),
+                      p("  9.	 am	 Transmission type 0<-automatic 1<-manual"),
+                      p("  10.	 gear	 # forward gears"),
+                      p("  11.	 carb	 # Carburetor"),
+                      
+                      h3("Source"),
+                      
+                      p("By Henderson and Vellman")
+             ),
+             tabPanel("About",
+                      a(),
+                      hr(),
+                      h4("Like the Shiny App?"),
+                      h4("Name is Developing Data Products Week 4")
+             )
+  )
+)
+```
+#Server Slides
+```{r}
+library(shiny)
+library(datasets)
+
+mpgData <- mtcars
+mpgData$am <- factor(mpgData$am, labels = c("Automatic", "Manual"))
+
+shinyServer(function(input, output) {
+  
+  formulaText <- reactive({ 
+    paste("mpg ~", input$variable) 
+  })
+  
+  formulaTextPoint <- reactive({  
+    paste("mpg ~", "as.integer(", input$variable, ")")
+  })
+  
+  fit <- reactive({
+    lm(as.formula(formulaTextPoint()), data=mpgData)
+  }) 
+  
+  output$caption <- renderText({
+    formulaText()
+  })
+  
+  output$mpgBoxPlot <- renderPlot({
+    boxplot(as.formula(formulaText()), 
+            data = mpgData,            
+            outline = input$outliers)  
+  })
+  
+  output$fit <- renderPrint({
+    summary(fit())
+  })
+  
+  output$mpgPlot <- renderPlot({
+    with(mpgData, {
+      plot(as.formula(formulaTextPoint()))
+      abline(fit(), col=2)
+    })
+  })
+  
+})
+
+```
+
